@@ -1,0 +1,91 @@
+const cron = require('node-cron');
+const ModbusRTU = require("modbus-serial");
+const db = require('../config/db');
+
+// --- FONCTION DE LECTURE UNITAIRE (Inchangée) ---
+async function traiterVariable(variable) {
+    const client = new ModbusRTU();
+    
+    // Sécurité : si pas d'IP, on sort
+    if (!variable.adresse_ip) return;
+
+    // Gestion silencieuse erreurs client
+    client.on("error", (err) => {});
+
+    try {
+        // Connexion (Timeout court 1s)
+        await client.connectTCP(variable.adresse_ip, { port: 502 });
+        client.setID(1);
+        client.setTimeout(1000);
+
+        // Lecture (Coil)
+        const data = await client.readCoils(variable.registre, 1);
+        
+        if (data && data.data) {
+            const valeurLue = data.data[0] ? 1 : 0;
+            
+            // Sauvegarde BDD
+            await db.query(
+                'INSERT INTO mesures (variable_id, valeur, horodatage) VALUES (?, ?, NOW())',
+                [variable.id, valeurLue]
+            );
+            
+            // Log pour vérifier que les rythmes sont bons
+            console.log(`[${variable.frequence}s] ${variable.nom} = ${valeurLue}`);
+        }
+    } catch (error) {
+        if (error.code !== 'ECONNRESET') {
+            // console.warn(`Erreur lecture ${variable.nom}: ${error.message}`);
+        }
+    } finally {
+        try { client.close(); } catch (e) {}
+    }
+}
+
+// --- USINE À TÂCHES CRON ---
+// Cette fonction crée une planification pour une fréquence donnée
+function demarrerCronFrequence(syntaxeCron, valeurFrequence) {
+    
+    console.log(`⏱️  Activation du cycle : ${valeurFrequence} secondes`);
+
+    cron.schedule(syntaxeCron, async () => {
+        try {
+            // 1. On ne demande à la BDD QUE les variables de CETTE fréquence
+            const [variables] = await db.query(`
+                SELECT v.id, v.nom, v.registre, v.frequence, a.adresse_ip 
+                FROM variables v
+                JOIN automates a ON v.automate_id = a.id
+                WHERE v.frequence = ?
+            `, [valeurFrequence]);
+
+            // 2. On les traite toutes
+            for (const v of variables) {
+                traiterVariable(v);
+            }
+
+        } catch (err) {
+            console.error(`Erreur cycle ${valeurFrequence}s :`, err.message);
+        }
+    });
+}
+
+// --- FONCTION PRINCIPALE ---
+const lancerScrutation = () => {
+    console.log("🚀 Service Multi-Crons DÉMARRÉ.");
+
+    // On lance nos 4 travailleurs parallèles :
+    
+    // 1. Toutes les secondes
+    demarrerCronFrequence('* * * * * *', 1);
+
+    // 2. Toutes les 3 secondes (*/3)
+    demarrerCronFrequence('*/3 * * * * *', 3);
+
+    // 3. Toutes les 5 secondes (*/5)
+    demarrerCronFrequence('*/5 * * * * *', 5);
+
+    // 4. Toutes les 10 secondes (*/10)
+    demarrerCronFrequence('*/10 * * * * *', 10);
+};
+
+module.exports = lancerScrutation;

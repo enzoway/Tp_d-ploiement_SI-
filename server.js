@@ -9,6 +9,17 @@ const db = require('./config/db');
 const automateRoutes = require('./routes/automates');
 const variableRoutes = require('./routes/variables');
 const mesureRoutes = require('./routes/mesures');
+const lancerScrutation = require('./services/automate1');
+
+// --- PROTECTION CONTRE LE CRASH DU SERVEUR ---
+process.on('uncaughtException', (err) => {
+    console.error('💥 ERREUR NON GÉRÉE (Le serveur reste allumé) :', err.message);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('💥 PROMESSE REJETÉE (Le serveur reste allumé) :', reason);
+});
+// ---------------------------------------------
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -41,4 +52,5 @@ app.get('/test-db', async (req, res) => {
 // Démarrage du serveur
 app.listen(PORT, () => {
   console.log(`Serveur démarré sur le port ${PORT}`);
+  lancerScrutation();
 });

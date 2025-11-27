@@ -12,7 +12,9 @@
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
     "express": "^4.21.2",
-    "mysql2": "^3.15.3"
+    "modbus-serial": "^8.0.23",
+    "mysql2": "^3.15.3",
+    "node-cron": "^4.2.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.11"
