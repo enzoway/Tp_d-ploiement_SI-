@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Surveillance</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    /* ... (Même CSS que Modification) ... */
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+    body { margin: 0; min-height: 100vh; display: flex; background: #020617; color: #e5e7eb; }
+    .sidebar { width: 260px; background: #020617; border-right: 1px solid #1f2937; padding: 1.5rem 1.25rem; display: flex; flex-direction: column; gap: 1.5rem; }
+    .logo { font-size: 1.2rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; }
+    .logo span { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 999px; background: radial-gradient(circle, #38bdf8, #1d4ed8); font-size: 0.9rem; font-weight: 800; color: #0b1120; }
+    .sidebar-list li { padding: 0.4rem 0.4rem; border-radius: 0.45rem; color: #9ca3af; cursor: pointer; transition: background-color 0.15s ease; margin-bottom: 5px; }
+    .sidebar-list li.active { background: #111827; color: #f9fafb; font-weight: 500; border-left: 3px solid #38bdf8; }
+    .main { flex: 1; padding: 1.5rem 1.75rem; display: flex; flex-direction: column; gap: 1.5rem; background: radial-gradient(circle at top, rgba(56,189,248,0.18), transparent 60%); overflow-y: auto; max-height: 100vh; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+    .badge { display: inline-flex; align-items: center; padding: 0.25rem 0.7rem; border-radius: 999px; border: 1px solid #1f2937; background: #020617aa; font-size: 0.8rem; }
+    .badge-dot { width: 8px; height: 8px; border-radius: 999px; background: #22c55e; margin-right: 0.4rem; }
+    .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+    .card { background: #020617cc; border-radius: 1rem; border: 1px solid #1f2937; padding: 1rem 1.1rem; box-shadow: 0 16px 30px rgba(0,0,0,0.35); }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+    .card-title { font-size: 0.95rem; font-weight: 600; }
+    .table-wrapper { margin-top: 0.75rem; border-radius: 0.75rem; border: 1px solid #1f2937; overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    th, td { padding: 0.55rem 0.75rem; text-align: left; border-bottom: 1px solid #111827; }
+    th { font-weight: 500; color: #9ca3af; }
+    .status-pill { padding: 0.15rem 0.6rem; border-radius: 999px; font-size: 0.7rem; border: 1px solid #16a34a33; background: rgba(22,163,74,0.15); color: #bbf7d0; }
+    .hidden { display: none !important; }
+    
+    .chart-wrapper { display: flex; margin-top: 0.5rem; height: 180px; gap: 8px; }
+    .chart-y-axis { display: flex; flex-direction: column; justify-content: space-between; text-align: right; min-width: 45px; font-size: 0.7rem; color: #6b7280; padding-bottom: 20px; }
+    .chart-main-area { flex: 1; display: flex; flex-direction: column; }
+    .chart-visual-box { flex: 1; position: relative; border-left: 1px solid #334155; border-bottom: 1px solid #334155; background: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px); background-size: 100% 25%, 10% 100%; overflow: hidden; }
+    .chart-x-axis { display: flex; justify-content: space-between; padding-top: 5px; font-size: 0.7rem; color: #6b7280; }
+    .chart-svg { width: 100%; height: 100%; position: absolute; bottom: 0; left: 0; }
+    .chart-path { fill: none; stroke: #38bdf8; stroke-width: 2; vector-effect: non-scaling-stroke; transition: d 0.5s linear; }
+    .chart-area { fill: rgba(56, 189, 248, 0.1); stroke: none; transition: d 0.5s linear; }
+    .value { font-size: 1.6rem; font-weight: 600; margin-top: 0.3rem; }
+    .trend { font-size: 0.8rem; color: #22c55e; }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="logo"><span>OP</span> Supervision</div>
+    <ul class="sidebar-list" style="list-style: none; padding: 0;">
+        <li id="nav-dashboard" class="active">Tableau de bord</li>
+        <li id="nav-detail">Analyse Graphique (Temps Réel)</li>
+        <li id="nav-history">Historique Complet</li>
+    </ul>
+    <div class="sidebar-footer">Mode : <strong>Surveillance</strong><br>Port 3002</div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="topbar-left"><h1 id="main-title">Surveillance</h1></div>
+      <div class="topbar-right"><div class="badge"><span class="badge-dot"></span> Connecté</div></div>
+    </header>
+
+    <!-- DASHBOARD -->
+    <section id="dashboard-section" class="grid">
+      <article class="card">
+        <div class="card-header"><div><div class="card-title">Automates</div></div></div>
+        <div class="value" id="count-automates">-</div>
+      </article>
+      <article class="card">
+        <div class="card-header"><div><div class="card-title">Dernière Mesure</div></div></div>
+        <div class="value" id="last-val">-</div>
+        <div class="trend" id="last-var">-</div>
+      </article>
+      <article class="card table-card" style="grid-column: span 3;">
+        <div class="card-header"><div><div class="card-title">Flux Temps Réel</div></div></div>
+        <div class="table-wrapper">
+          <table id="tab-flux"><thead><tr><th>Heure</th><th>Variable</th><th>Valeur</th></tr></thead><tbody></tbody></table>
+        </div>
+      </article>
+    </section>
+
+    <!-- DETAIL / GRAPHS -->
+    <section id="detail-section" class="hidden">
+        <article class="card" style="margin-bottom: 1rem;">
+            <div class="card-header">
+                <div class="card-title">Sélection Automate</div>
+                <select id="graph-auto-select" style="width: 200px; padding: 0.3rem;"><option value="">-- Choisir --</option></select>
+            </div>
+        </article>
+        <div id="graphs-container" class="grid-2"></div>
+    </section>
+
+    <!-- HISTORIQUE -->
+    <section id="history-section" class="hidden">
+      <article class="card">
+        <div class="card-header"><div><div class="card-title">Historique Complet</div></div></div>
+        <div class="history-wrapper">
+          <table id="tab-history"><thead><tr><th>Date</th><th>Variable</th><th>Valeur</th></tr></thead><tbody></tbody></table>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    // Fonction robuste pour déterminer l'adresse du Backend
+    function getApiUrl() {
+        // Cas 1 : Si on ouvre le fichier localement (double-clic)
+        if (window.location.protocol === 'file:') {
+            return 'http://localhost:3002/api';
+        }
+        // Cas 2 : Si on est hébergé (Docker, Nginx, Live Server)
+        // On reprend l'IP de la barre d'adresse automatiquement
+        return 'http://' + window.location.hostname + ':3002/api';
+    }
+
+    const API_URL = getApiUrl();
+    let refreshInterval = null;
+    let currentAutoIdForGraphs = null;
+
+    document.addEventListener("DOMContentLoaded", function () {
+      const sections = { dash: document.getElementById("dashboard-section"), detail: document.getElementById("detail-section"), history: document.getElementById("history-section") };
+      const navs = { dash: document.getElementById("nav-dashboard"), detail: document.getElementById("nav-detail"), history: document.getElementById("nav-history") };
+
+      function show(key) {
+        Object.values(sections).forEach(el => el.classList.add("hidden"));
+        Object.values(navs).forEach(el => el && el.classList.remove("active"));
+        sections[key].classList.remove("hidden");
+        navs[key].classList.add("active");
+        
+        if(refreshInterval) clearInterval(refreshInterval);
+
+        if(key === 'dash') {
+            loadDashboard();
+            refreshInterval = setInterval(loadDashboard, 2000);
+        }
+        if(key === 'detail') {
+            loadAutomateSelect();
+            refreshInterval = setInterval(updateGraphs, 2000);
+        }
+        if(key === 'history') loadHistory();
+      }
+
+      navs.dash.onclick = () => show('dash');
+      navs.detail.onclick = () => show('detail');
+      navs.history.onclick = () => show('history');
+
+      // --- DASHBOARD ---
+      async function loadDashboard() {
+        const autos = await fetch(`${API_URL}/automates`).then(r => r.json());
+        document.getElementById("count-automates").textContent = autos.length;
+
+        const mesures = await fetch(`${API_URL}/mesures?limit=10`).then(r => r.json());
+        if(mesures.length > 0) {
+            document.getElementById("last-val").textContent = mesures[0].valeur;
+            document.getElementById("last-var").textContent = mesures[0].variable_nom || ("Var "+mesures[0].variable_id);
+        }
+        document.querySelector("#tab-flux tbody").innerHTML = mesures.map(m => `
+            <tr><td>${new Date(m.horodatage).toLocaleTimeString()}</td><td>${m.variable_nom || m.variable_id}</td><td style="color:#38bdf8">${m.valeur}</td></tr>
+        `).join('');
+      }
+
+      // --- GRAPHS ---
+      async function loadAutomateSelect() {
+        const autos = await fetch(`${API_URL}/automates`).then(r => r.json());
+        const sel = document.getElementById("graph-auto-select");
+        const old = sel.value;
+        sel.innerHTML = '<option value="">-- Choisir --</option>' + autos.map(a => `<option value="${a.id}">${a.nom}</option>`).join('');
+        sel.value = old;
+      }
+
+      document.getElementById("graph-auto-select").addEventListener("change", (e) => {
+        currentAutoIdForGraphs = e.target.value;
+        generateGraphCards();
+      });
+
+      async function generateGraphCards() {
+        const container = document.getElementById("graphs-container");
+        if(!currentAutoIdForGraphs) { container.innerHTML = ''; return; }
+
+        const allVars = await fetch(`${API_URL}/variables`).then(r => r.json());
+        const myVars = allVars.filter(v => v.automate_id == currentAutoIdForGraphs);
+
+        container.innerHTML = myVars.map(v => {
+            const min = v.min || 0; const max = v.max || 100;
+            return `
+            <article class="card">
+                <div class="card-header"><div class="card-title">${v.nom}</div><div class="trend">${v.unite || ''}</div></div>
+                <div class="value" id="val-${v.id}">--</div>
+                <div class="chart-wrapper">
+                    <div class="chart-y-axis"><span>${max}</span><span>${(parseFloat(min)+parseFloat(max))/2}</span><span>${min}</span></div>
+                    <div class="chart-main-area">
+                        <div class="chart-visual-box" id="box-${v.id}" data-min="${min}" data-max="${max}">
+                            <svg class="chart-svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="chart-area" d="" /><path class="chart-path" d="" fill="none" stroke="#38bdf8" stroke-width="2" /></svg>
+                        </div>
+                        <div class="chart-x-axis"><span>-1min</span><span>Now</span></div>
+                    </div>
+                </div>
+            </article>
+        `}).join('');
+        updateGraphs();
+      }
+
+      async function updateGraphs() {
+        if(!currentAutoIdForGraphs) return;
+        const mesures = await fetch(`${API_URL}/mesures?limit=200`).then(r => r.json());
+        
+        document.querySelectorAll('.chart-visual-box').forEach(box => {
+            const varId = box.id.split('-')[1];
+            const min = parseFloat(box.dataset.min); const max = parseFloat(box.dataset.max);
+            const data = mesures.filter(m => m.variable_id == varId).sort((a,b) => new Date(a.horodatage) - new Date(b.horodatage)).slice(-30);
+
+            if(data.length > 0) {
+                document.getElementById(`val-${varId}`).textContent = data[data.length-1].valeur;
+                let pathD = "";
+                data.forEach((p, i) => {
+                    const x = (i/(data.length-1))*100;
+                    let y = 100 - (Math.max(0, Math.min(1, (p.valeur - min)/(max - min || 1))) * 100);
+                    pathD += (i===0 ? `M ${x} ${y}` : ` L ${x} ${y}`);
+                });
+                const svg = box.querySelector('svg');
+                svg.querySelector('.chart-path').setAttribute('d', pathD);
+                svg.querySelector('.chart-area').setAttribute('d', pathD + ' V 100 H 0 Z');
+            }
+        });
+      }
+
+      async function loadHistory() {
+        const ms = await fetch(`${API_URL}/mesures?limit=50`).then(r => r.json());
+        document.querySelector("#tab-history tbody").innerHTML = ms.map(m => `<tr><td>${new Date(m.horodatage).toLocaleString()}</td><td>${m.variable_nom}</td><td>${m.valeur}</td></tr>`).join('');
+      }
+
+      show('dash');
+    });
+  </script>
+</body>
+</html>

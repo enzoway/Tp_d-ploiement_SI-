@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  # --- SERVICE 1 : BASE DE DONNÉES ---
+  db:
+    image: mariadb:10.6
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: tp_deploiement_si
+    volumes:
+      # Initialisation de la BDD au premier lancement
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+      # Persistance des données
+      - db_data:/var/lib/mysql
+    networks:
+      - industrial-net
+
+  # --- SERVICE 2 : BACKEND (API) ---
+  backend:
+    build: ./backend
+    restart: always
+    ports:
+      - "3002:3002" # Accessible de l'extérieur sur le port 3002
+    environment:
+      # Connexion interne à Docker : on utilise le nom du service "db"
+      DB_HOST: db
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: tp_deploiement_si
+      PORT: 3002
+    depends_on:
+      - db
+    networks:
+      - industrial-net
+
+  # --- SERVICE 3 : FRONTEND (Site Web) ---
+  frontend:
+    image: nginx:alpine
+    restart: always
+    ports:
+      - "80:80" # Accessible sur le port standard web (http://...)
+    volumes:
+      # On injecte le contenu de ton dossier 'frontend' dans le serveur web Nginx
+      - ./frontend:/usr/share/nginx/html
+    networks:
+      - industrial-net
+
+volumes:
+  db_data:
+
+networks:
+  industrial-net:
+    driver: bridge
