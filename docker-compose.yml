@@ -6,6 +6,8 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: tp_deploiement_si
+    ports:
+      - "3308:3306" #exporte la base de données pour l'accès externe
     volumes:
       # Initialisation de la BDD au premier lancement
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
