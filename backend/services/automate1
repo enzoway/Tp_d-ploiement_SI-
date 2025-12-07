@@ -1,0 +1,79 @@
+const cron = require('node-cron');
+const ModbusRTU = require("modbus-serial");
+const db = require('../config/db');
+
+async function traiterVariable(variable) {
+    const client = new ModbusRTU();
+    
+    if (!variable.adresse_ip) return;
+    client.on("error", (err) => {});
+
+    try {
+        await client.connectTCP(variable.adresse_ip, { port: 502 });
+        client.setID(1);
+        client.setTimeout(1000);
+
+        let valeurLue = null;
+
+        // --- LOGIQUE DE LECTURE BASÉE SUR LA COLONNE 'type' ---
+        // Dans ta BDD, les valeurs sont 'coil' ou 'holding'
+        
+        if (variable.type === 'holding' || variable.type === 'mot') {
+            // Lecture de MOT (%MW) -> Holding Register (Fonction 03)
+            const data = await client.readHoldingRegisters(variable.registre, 1);
+            if (data && data.data) {
+                valeurLue = data.data[0];
+            }
+        } else {
+            // Lecture de BIT (%M) -> Coil (Fonction 01)
+            // Par défaut si type='coil' ou vide
+            const data = await client.readCoils(variable.registre, 1);
+            if (data && data.data) {
+                valeurLue = data.data[0] ? 1 : 0;
+            }
+        }
+        
+        if (valeurLue !== null) {
+            await db.query(
+                'INSERT INTO mesures (variable_id, valeur, horodatage) VALUES (?, ?, NOW())',
+                [variable.id, valeurLue]
+            );
+            // console.log(`[OK] ${variable.nom} (${variable.type}) = ${valeurLue}`);
+        }
+
+    } catch (error) {
+        if (error.code !== 'ECONNRESET') { /* console.warn(...) */ }
+    } finally {
+        try { client.close(); } catch (e) {}
+    }
+}
+
+function demarrerCronFrequence(syntaxeCron, valeurFrequence) {
+    cron.schedule(syntaxeCron, async () => {
+        try {
+            // On récupère la colonne 'type'
+            const [variables] = await db.query(`
+                SELECT v.id, v.nom, v.registre, v.frequence, v.type, a.adresse_ip 
+                FROM variables v
+                JOIN automates a ON v.automate_id = a.id
+                WHERE v.frequence = ?
+            `, [valeurFrequence]);
+
+            for (const v of variables) {
+                traiterVariable(v);
+            }
+        } catch (err) {
+            console.error(`Erreur cycle ${valeurFrequence}s :`, err.message);
+        }
+    });
+}
+
+const lancerScrutation = () => {
+    console.log("🚀 Service Modbus (Type BDD) DÉMARRÉ.");
+    demarrerCronFrequence('* * * * * *', 1);
+    demarrerCronFrequence('*/3 * * * * *', 3);
+    demarrerCronFrequence('*/5 * * * * *', 5);
+    demarrerCronFrequence('*/10 * * * * *', 10);
+};
+
+module.exports = lancerScrutation;

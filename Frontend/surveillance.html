@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Surveillance - Supervision</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    /* --- CSS GLOBAL ET DESIGN V2 (COPIÉ DE MODIFICATION.HTML) --- */
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    body { margin: 0; min-height: 100vh; display: flex; background: #020617; color: #e5e7eb; }
+    .sidebar { width: 260px; background: #020617; border-right: 1px solid #1f2937; padding: 1.5rem 1.25rem; display: flex; flex-direction: column; gap: 1.5rem; }
+    .logo { font-size: 1.2rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; }
+    .logo span { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 999px; background: radial-gradient(circle, #38bdf8, #1d4ed8); font-size: 0.9rem; font-weight: 800; color: #0b1120; }
+    .sidebar-section-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: #6b7280; margin-bottom: 0.4rem; }
+    .sidebar-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.9rem; }
+    .sidebar-list li { padding: 0.4rem 0.4rem; border-radius: 0.45rem; color: #9ca3af; cursor: pointer; transition: background-color 0.15s ease, color 0.15s ease; }
+    .sidebar-list li.active { background: #111827; color: #f9fafb; font-weight: 500; border-left: 3px solid #38bdf8; }
+    .sidebar-list li:hover { background: #111827; color: #f9fafb; }
+    .sidebar-footer { margin-top: auto; font-size: 0.75rem; color: #6b7280; }
+    .main { flex: 1; padding: 1.5rem 1.75rem; display: flex; flex-direction: column; gap: 1.5rem; background: radial-gradient(circle at top, rgba(56,189,248,0.18), transparent 60%); overflow-y: auto; max-height: 100vh; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+    .topbar-left h1 { font-size: 1.4rem; margin: 0; }
+    .topbar-left p { margin: 0.2rem 0 0; font-size: 0.85rem; color: #9ca3af; }
+    .topbar-right { text-align: right; font-size: 0.85rem; }
+    .badge { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.25rem 0.7rem; border-radius: 999px; border: 1px solid #1f2937; background: #020617aa; font-size: 0.8rem; }
+    .badge-dot { width: 8px; height: 8px; border-radius: 999px; background: #22c55e; margin-right: 0.4rem; }
+    .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+    @media (max-width: 900px) { .sidebar { display: none; } .grid, .grid-2 { grid-template-columns: 1fr; } }
+    .card { background: #020617cc; border-radius: 1rem; border: 1px solid #1f2937; padding: 1rem 1.1rem; box-shadow: 0 16px 30px rgba(0,0,0,0.35); }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+    .card-title { font-size: 0.95rem; font-weight: 600; }
+    .card-subtitle { font-size: 0.75rem; color: #6b7280; }
+    .table-card { grid-column: span 2; }
+    .table-wrapper { margin-top: 0.75rem; border-radius: 0.75rem; border: 1px solid #1f2937; overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    thead { background: #020617; }
+    th, td { padding: 0.55rem 0.75rem; text-align: left; border-bottom: 1px solid #111827; }
+    th { font-weight: 500; color: #9ca3af; }
+    tr:last-child td { border-bottom: none; }
+    .chip { display: inline-flex; align-items: center; padding: 0.15rem 0.6rem; border-radius: 999px; border: 1px solid #1f2937; font-size: 0.75rem; color: #9ca3af; gap: 0.4rem; cursor:pointer; }
+    .hidden { display: none !important; }
+    .btn { border-radius: 999px; border: none; cursor: pointer; font-weight: 600; font-size: 0.9rem; padding: 0.6rem 1.4rem; background: linear-gradient(135deg, #38bdf8, #6366f1); color: #0b1120; display: inline-flex; align-items: center; gap: 0.4rem; transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.15s; }
+    .btn:hover { filter: brightness(1.05); box-shadow: 0 10px 25px rgba(56, 189, 248, 0.35); }
+    input, select { width: 100%; padding: 0.55rem 0.75rem; border-radius: 0.6rem; border: 1px solid #374151; background: #020617; color: #e5e7eb; font-size: 0.9rem; outline: none; transition: border-color 0.2s, box-shadow 0.2s, background 0.2s; }
+    
+    /* CSS Charts Dynamiques */
+    .chart-wrapper { display: flex; margin-top: 0.5rem; height: 180px; gap: 8px; }
+    .chart-y-axis { display: flex; flex-direction: column; justify-content: space-between; text-align: right; min-width: 45px; font-size: 0.7rem; color: #6b7280; padding-bottom: 20px; }
+    .chart-main-area { flex: 1; display: flex; flex-direction: column; }
+    .chart-visual-box { flex: 1; position: relative; border-left: 1px solid #334155; border-bottom: 1px solid #334155; background: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px); background-size: 100% 25%, 10% 100%; overflow: hidden; }
+    .chart-x-axis { display: flex; justify-content: space-between; padding-top: 5px; font-size: 0.7rem; color: #6b7280; }
+    .chart-svg { width: 100%; height: 100%; position: absolute; bottom: 0; left: 0; }
+    .chart-path { fill: none; stroke: #38bdf8; stroke-width: 2; vector-effect: non-scaling-stroke; transition: d 0.5s linear; }
+    .chart-area { fill: rgba(56, 189, 248, 0.1); stroke: none; transition: d 0.5s linear; }
+    .value { font-size: 1.6rem; font-weight: 600; margin-top: 0.3rem; }
+    .trend { font-size: 0.8rem; color: #22c55e; }
+    .history-wrapper { border-radius: 0.75rem; border: 1px solid #1f2937; overflow: hidden; max-height: 60vh; overflow-y: auto; }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="logo"><span>OP</span> Supervision</div>
+    <ul class="sidebar-list">
+        <li id="nav-dashboard" class="active">Tableau de bord</li>
+        <li id="nav-detail">Analyse Graphique (Temps Réel)</li>
+        <li id="nav-history">Historique Complet</li>
+    </ul>
+    <div class="sidebar-footer">Mode : <strong>Surveillance</strong><br>Port 3002</div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <h1 id="main-title">Surveillance</h1>
+        <p>Vue d'ensemble en temps réel</p>
+      </div>
+      <div class="topbar-right">
+        <div class="badge"><span class="badge-dot"></span> Connecté</div>
+        <div style="font-size:0.8rem; color:#9ca3af; margin-top:5px; text-align:right">Accès Lecture Seule</div>
+      </div>
+    </header>
+
+    <section id="dashboard-section" class="grid">
+      
+      <article class="card" style="grid-column: span 2;">
+        <div class="card-header"><div><div class="card-title">Liste des automates</div></div></div>
+        <div class="table-wrapper">
+          <table id="tab-autos">
+            <thead><tr><th>ID</th><th>Nom</th><th>IP</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-header"><div><div class="card-title">Variables Config</div></div></div>
+        <div class="table-wrapper">
+          <table id="tab-vars">
+            <thead><tr><th>Nom</th><th>Unit</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="card" style="grid-column: 1 / -1;">
+        <div class="card-header"><div><div class="card-title">Flux de Données (Live)</div></div></div>
+        <div class="table-wrapper">
+          <table id="tab-flux">
+            <thead><tr><th>Heure</th><th>Variable</th><th>Valeur</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+
+    <section id="detail-section" class="hidden">
+        <article class="card" style="margin-bottom: 1rem;">
+            <div class="card-header">
+                <div class="card-title">Sélection Automate</div>
+                <select id="graph-auto-select" style="width: 200px; padding: 0.3rem;"><option value="">-- Choisir --</option></select>
+            </div>
+        </article>
+        <div id="graphs-container" class="grid-2"></div>
+    </section>
+
+    <section id="history-section" class="hidden">
+      <article class="card">
+        <div class="card-header">
+            <div><div class="card-title">Historique Complet</div></div>
+            <button class="btn" onclick="exportCSV()" style="margin-top:0; font-size:0.8rem; padding:0.4rem 1rem;">Exporter Tout (CSV)</button>
+        </div>
+        <div class="history-wrapper">
+          <table id="tab-history">
+            <thead><tr><th>Date</th><th>Variable</th><th>Valeur</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    function getApiUrl() {
+        if (window.location.protocol === 'file:') return 'http://localhost:3002/api';
+        return 'http://' + window.location.hostname + ':3002/api';
+    }
+
+    const API_URL = getApiUrl();
+    let refreshInterval = null;
+    let currentAutoIdForGraphs = null;
+
+    document.addEventListener("DOMContentLoaded", function () {
+      const sections = { dash: document.getElementById("dashboard-section"), detail: document.getElementById("detail-section"), history: document.getElementById("history-section") };
+      const navs = { dash: document.getElementById("nav-dashboard"), detail: document.getElementById("nav-detail"), history: document.getElementById("nav-history") };
+
+      function show(key) {
+        Object.values(sections).forEach(el => el.classList.add("hidden"));
+        Object.values(navs).forEach(el => el && el.classList.remove("active"));
+        sections[key].classList.remove("hidden");
+        navs[key].classList.add("active");
+        
+        if(refreshInterval) clearInterval(refreshInterval);
+
+        if(key === 'dash') {
+            loadDashboard(); 
+            refreshInterval = setInterval(loadFluxOnly, 2000); 
+        }
+        if(key === 'detail') {
+            loadAutomateSelect();
+            refreshInterval = setInterval(updateGraphs, 2000);
+        }
+        if(key === 'history') loadHistory();
+      }
+
+      navs.dash.onclick = () => show('dash');
+      navs.detail.onclick = () => show('detail');
+      navs.history.onclick = () => show('history');
+
+      // --- DASHBOARD ---
+      async function loadDashboard() {
+        try {
+            // Chargement Liste Automates (Lecture Seule)
+            const autos = await fetch(`${API_URL}/automates`).then(r => r.json());
+            document.querySelector("#tab-autos tbody").innerHTML = autos.map(a => `
+                <tr><td>${a.id}</td><td>${a.nom}</td><td>${a.adresse_ip}</td></tr>
+            `).join('');
+
+            // Chargement Liste Variables (Lecture Seule)
+            const vars = await fetch(`${API_URL}/variables`).then(r => r.json());
+            document.querySelector("#tab-vars tbody").innerHTML = vars.map(v => `
+                <tr><td>${v.nom}</td><td>${v.unite || '-'}</td></tr>
+            `).join('');
+            
+            loadFluxOnly();
+        } catch(e) { console.error("Erreur API", e); }
+      }
+
+      async function loadFluxOnly() {
+        try {
+            const mesures = await fetch(`${API_URL}/mesures?limit=10`).then(r => r.json());
+            document.querySelector("#tab-flux tbody").innerHTML = mesures.map(m => `
+                <tr>
+                    <td>${new Date(m.horodatage).toLocaleTimeString()}</td>
+                    <td>${m.variable_nom || m.variable_id}</td>
+                    <td style="color:#38bdf8; font-weight:bold;">${m.valeur}</td>
+                </tr>
+            `).join('');
+        } catch(e) {}
+      }
+
+      // --- GRAPHS ---
+      async function loadAutomateSelect() {
+        try {
+            const autos = await fetch(`${API_URL}/automates`).then(r => r.json());
+            const sel = document.getElementById("graph-auto-select");
+            const old = sel.value;
+            sel.innerHTML = '<option value="">-- Choisir --</option>' + autos.map(a => `<option value="${a.id}">${a.nom}</option>`).join('');
+            if(old && sel.querySelector(`option[value="${old}"]`)) sel.value = old;
+        } catch(e) {}
+      }
+
+      document.getElementById("graph-auto-select").addEventListener("change", (e) => {
+        currentAutoIdForGraphs = e.target.value;
+        generateGraphCards();
+      });
+
+      async function generateGraphCards() {
+        const container = document.getElementById("graphs-container");
+        if(!currentAutoIdForGraphs) { container.innerHTML = '<div style="color:#6b7280; text-align:center; grid-column:span 2;">Sélectionnez un automate</div>'; return; }
+
+        const allVars = await fetch(`${API_URL}/variables`).then(r => r.json());
+        const myVars = allVars.filter(v => v.automate_id == currentAutoIdForGraphs);
+
+        if (myVars.length === 0) { container.innerHTML = '<div style="color:#6b7280; text-align:center; grid-column:span 2;">Aucune variable configurée</div>'; return; }
+
+        container.innerHTML = myVars.map(v => {
+            const min = v.min || 0; const max = v.max || 100;
+            return `
+            <article class="card">
+                <div class="card-header"><div class="card-title">${v.nom}</div><div class="trend">${v.unite || ''}</div></div>
+                <div class="value" id="val-${v.id}">--</div>
+                <div class="chart-wrapper">
+                    <div class="chart-y-axis"><span>${max}</span><span>${(parseFloat(min)+parseFloat(max))/2}</span><span>${min}</span></div>
+                    <div class="chart-main-area">
+                        <div class="chart-visual-box" id="box-${v.id}" data-min="${min}" data-max="${max}">
+                            <svg class="chart-svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="chart-area" d="" /><path class="chart-path" d="" fill="none" stroke="#38bdf8" stroke-width="2" /></svg>
+                        </div>
+                        <div class="chart-x-axis"><span>-1min</span><span>Maintenant</span></div>
+                    </div>
+                </div>
+            </article>
+        `}).join('');
+        updateGraphs();
+      }
+
+      async function updateGraphs() {
+        if(!currentAutoIdForGraphs) return;
+        try {
+            const mesures = await fetch(`${API_URL}/mesures?limit=200`).then(r => r.json());
+            document.querySelectorAll('.chart-visual-box').forEach(box => {
+                const varId = box.id.split('-')[1];
+                const min = parseFloat(box.dataset.min); const max = parseFloat(box.dataset.max);
+                const data = mesures.filter(m => m.variable_id == varId).sort((a,b) => new Date(a.horodatage) - new Date(b.horodatage)).slice(-30);
+                if(data.length > 0) {
+                    document.getElementById(`val-${varId}`).textContent = data[data.length-1].valeur;
+                    let pathD = "";
+                    data.forEach((p, i) => {
+                        const x = (i/(data.length-1))*100;
+                        let y = 100 - (Math.max(0, Math.min(1, (p.valeur - min)/(max - min || 1))) * 100);
+                        pathD += (i===0 ? `M ${x} ${y}` : ` L ${x} ${y}`);
+                    });
+                    const svg = box.querySelector('svg');
+                    svg.querySelector('.chart-path').setAttribute('d', pathD);
+                    svg.querySelector('.chart-area').setAttribute('d', pathD + ' V 100 H 0 Z');
+                }
+            });
+        } catch(e) {}
+      }
+
+      async function loadHistory() {
+        try {
+            const ms = await fetch(`${API_URL}/mesures?limit=50`).then(r => r.json());
+            document.querySelector("#tab-history tbody").innerHTML = ms.map(m => `<tr><td>${new Date(m.horodatage).toLocaleString()}</td><td>${m.variable_nom || m.variable_id}</td><td>${m.valeur}</td></tr>`).join('');
+        } catch(e) {}
+      }
+
+      window.exportCSV = async function() {
+        try {
+            const response = await fetch(`${API_URL}/mesures?limit=1000000`); 
+            const data = await response.json();
+            if (!data || data.length === 0) { alert("Aucune donnée."); return; }
+            let csvContent = "data:text/csv;charset=utf-8,Date;Variable;Valeur\n";
+            data.forEach(row => { csvContent += `${new Date(row.horodatage).toLocaleString().replace(',', '')};${row.variable_nom || row.variable_id};${row.valeur}\n`; });
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a"); link.setAttribute("href", encodedUri); link.setAttribute("download", "historique_complet.csv");
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        } catch (e) { alert("Erreur export."); }
+      };
+
+      show('dash');
+    });
+  </script>
+</body>
+</html>
